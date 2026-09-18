@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Optional: start grammatisch_keys.py at login.
+
+  EDIT BOTH PATHS BELOW before installing:
+    - the python3 path            (run `which python3` to find yours)
+    - the grammatisch_keys.py path
+
+  Install:
+    cp local.grammatisch-hotkey-solution.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/local.grammatisch-hotkey-solution.plist
+
+  Note: a launchd process does NOT inherit Terminal's Accessibility grant.
+  You will be prompted again, and the grant attaches to the python3 binary.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>local.grammatisch-hotkey-solution</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/python3</string>
+        <string>/Users/CHANGEME/Documents/grammatisch-hotkey-solution/grammatisch_keys.py</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/grammatisch-hotkey-solution.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/tmp/grammatisch-hotkey-solution.err</string>
+
+    <key>ProcessType</key>
+    <string>Interactive</string>
+</dict>
+</plist>
