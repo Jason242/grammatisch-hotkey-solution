@@ -1,15 +1,17 @@
 # grammatisch-hotkey-solution
 
 Answer Grammatisch exercises with the `1`, `2` and `3` keys instead of the
-mouse.
+mouse, and gloss conjugation infinitives with `Ctrl+T`.
 
 Grammatisch's answer buttons are mouse-only. If you're drilling a few hundred
 items, that's a few hundred pointer moves for input that's fundamentally
 three-way. This script adds the missing keyboard layer from outside the app.
 
 While Grammatisch is frontmost, `1`/`2`/`3` press the first, second and third
-answer button. Every other key, and every key in every other app, passes
-through untouched.
+answer button. `Ctrl+T` looks up the on-screen prompt word (the infinitive on
+conjugation screens, where the word is not selectable so Grammatisch's own
+Translation button has nothing to grab) and shows an English gloss. Every
+other key, and every key in every other app, passes through untouched.
 
 > **Not affiliated with or endorsed by the makers of Grammatisch.** This is an
 > external helper that drives the app through the standard macOS accessibility
@@ -25,14 +27,14 @@ privilege: it allows intercepting keyboard input system-wide. You should not
 grant that to a script from a stranger on the internet without looking at it
 first.
 
-So: [read `grammatisch_keys.py`](grammatisch_keys.py). It's ~450 lines with
-comments, single file, no obfuscation. Specifically, you can verify that it:
+So: [read `grammatisch_keys.py`](grammatisch_keys.py). It's one file with
+comments, no obfuscation. Specifically, you can verify that it:
 
-- has **no network code whatsoever** — nothing is sent anywhere, ever
 - only acts when the frontmost app's bundle ID is `CI.GrammarApp`
-- only reacts to bare `1`/`2`/`3` keydowns, and passes every other event
-  through unmodified
+- only swallows bare `1`/`2`/`3` and `Ctrl+T`; every other event passes through
 - writes nothing to disk
+- does **no network** for answering; `Ctrl+T` fetches a gloss for that one word
+  from Wiktionary, then Google Translate only if Wiktionary has no entry
 
 If any of that doesn't hold when you read it, please open an issue.
 
@@ -91,8 +93,9 @@ ok Found 3 answer button(s):
      3. das  @(712,630)
 ```
 
-On the exercise picker instead of a question you'll see
-`No answer buttons found`. That's correct — see *Inert outside questions* below.
+On a conjugation or text screen you'll see the prompt word instead, which is
+correct. On the exercise picker you'll see `No answer buttons found` — see
+*Inert outside questions* below.
 
 ## Run
 
@@ -102,20 +105,27 @@ python3 grammatisch_keys.py
 
 ```
 Listening. 1 / 2 / 3 answer Grammatisch while it's frontmost.
+Ctrl+T glosses the on-screen word. Esc or click the gloss to close.
 Ctrl-C to quit.
 1 -> der
 3 -> das
+t  ergeben
+   to yield, produce; to make sense; to surrender  [wiktionary]
 ```
 
-Leave it running, switch to Grammatisch, and answer with the number keys.
+Leave it running, switch to Grammatisch, and answer with the number keys. On a
+conjugation screen, `Ctrl+T` (not bare `t`, so `ergibt` still types) shows a
+one-line caption under the infinitive. Esc, a click on the caption, or Ctrl+T
+again closes it.
 
 ---
 
 ## How it works
 
-- **`CGEventTap`** on `kCGSessionEventTap` watches for keydowns. On a match the
-  handler returns `None`, which swallows the event so the digit isn't also
-  typed into the app. Everything else is returned untouched.
+- **`CGEventTap`** on `kCGSessionEventTap` watches for keydowns (and left clicks
+  while a gloss is showing). On a match the handler returns `None`, which
+  swallows the event so the digit isn't also typed into the app. Everything
+  else is returned untouched.
 - **App scoping** is a `frontmostApplication()` check against bundle ID
   `CI.GrammarApp` on every keypress. If Grammatisch isn't frontmost the key
   passes through, so `1` still types `1` everywhere else.
@@ -133,9 +143,14 @@ Leave it running, switch to Grammatisch, and answer with the number keys.
 - **Pressing** tries `AXPress` first, falling back to a synthetic click on the
   button's centre if the app doesn't implement the action.
 - **Modifiers**: cmd, ctrl or alt held → pass through, so `⌘1` and friends keep
-  working.
+  working. **Exception:** `Ctrl+T` looks up the prompt word.
+- **Gloss lookup**: the conjugation infinitive is not selectable, so the in-app
+  Translation button cannot grab it. Ctrl+T reads the prompt from the
+  accessibility tree (`Conjugate the verb, ergeben`), asks Wiktionary for
+  English senses, and falls back to Google Translate only if Wiktionary 404s.
+  The lookup runs on a background thread so the event tap is not blocked.
 - **Keycodes** 18/19/20 are physical key positions, identical on US QWERTY and
-  German QWERTZ, so your keyboard layout doesn't matter.
+  German QWERTZ, so your keyboard layout doesn't matter. `T` is keycode 17.
 
 ## Troubleshooting
 
@@ -175,9 +190,10 @@ Running it by hand is less fragile.
 
 ## Ideally, this shouldn't exist
 
-The right fix is number-key shortcuts in the app itself. A feature request has
-been sent to the developers. If they add it, this repo becomes unnecessary,
-which would be the good outcome.
+The right fix is number-key shortcuts — and a working translation control on
+conjugation screens — in the app itself. A feature request has been sent to the
+developers. If they add it, this repo becomes unnecessary, which would be the
+good outcome.
 
 ## License
 
